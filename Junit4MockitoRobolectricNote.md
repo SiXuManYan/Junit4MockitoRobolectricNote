@@ -94,6 +94,91 @@ val spyList = spy(realList)
 doReturn(100).`when`(spyList).size
 ```
 
+## 10. stub（打桩）
+Stub：预设方法返回值或行为，避免执行真实逻辑
+- 常用写法：
+```kotlin
+whenever(mockObj.method(param)).thenReturn(value)
+doThrow(RuntimeException()).`when`(mockObj).voidMethod()
+```
+- 对于 spy 对象，未打桩的方法默认会执行真实逻辑
+
+## 11. doAnswer()
+用于在 mock 方法被调用时：
+- 动态访问参数
+- 执行自定义逻辑（如触发回调）
+- 决定返回值或抛出异常
+```kotlin
+doAnswer {
+    val listener = it.arguments[0] as Listener
+    listener.onEvent()
+    null
+}.`when`(mockObj).注册监听(any())
+```
+
+## 12. Robolectric
+ - 使用 RobolectricTestRunner 可在 JVM 直接运行 Android 测试，无需真机
+```kotlin
+@RunWith(RobolectricTestRunner::class)
+class ExampleTest {
+    @Test
+    fun testSomething() { ... }
+}
+```
+
+## 13. 推荐的单元测试模板
+```kotlin
+class ExampleTest {
+
+    private lateinit var adapter: 被测类
+    private lateinit var dependency: 依赖接口
+
+    @Before
+    fun setUp() {
+        dependency = mock(依赖接口::class.java)
+        adapter = 被测类().apply {
+            this.依赖 = dependency
+        }
+    }
+
+    @Test
+    fun testSuccess() {
+        // Arrange
+        whenever(dependency.方法()).thenReturn(预设数据)
+
+        // Act
+        adapter.方法()
+
+        // Assert
+        verify(dependency).方法()
+    }
+
+    @Test
+    fun testThrowException() {
+        whenever(dependency.方法()).thenThrow(RuntimeException())
+
+        assertThrows(目标异常::class.java) {
+            adapter.方法()
+        }
+    }
+}
+
+```
+
+## 14.命名建议
+```
+test方法名_场景_期望结果
+例如：
+testLogin_withInvalidPassword_throwException
+```
+
+## 15.关键要点总结
+- 测试结构遵循 Arrange / Act / Assert
+- 使用 mock/spy/when/doThrow/doAnswer 控制依赖
+- 优先使用 assertThrows 验证异常
+- Robolectric 适合本地 JVM 环境运行 Android 逻辑
+
+
 
 
 
