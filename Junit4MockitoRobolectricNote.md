@@ -178,6 +178,34 @@ testLogin_withInvalidPassword_throwException
 - 优先使用 assertThrows 验证异常
 - Robolectric 适合本地 JVM 环境运行 Android 逻辑
 
+---
+# 测试中的关键知识点整理
+
+## 1. 本地单元测试 vs 真机测试
+- 本地单元测试（JVM / Robolectric）：
+  - 无法执行真实的服务绑定
+  - 适合验证字段初始化（上下文、线程、Handler 等）
+  - 绑定服务相关的状态变化不会成功
+- 真机 / Instrumentation 测试：
+  - 可以正常绑定服务并收到回调
+  - 可以验证服务状态的变化
+
+## 2. 覆盖异常分支的方法
+- 思路：让某个被调用的初始化方法抛出 `IllegalArgumentException`
+- 方法：
+  1. 先正常调用一次初始化，忽略第一次绑定失败的异常
+  2. 使用反射把内部依赖替换成 mock
+  3. mock 的方法抛出 `IllegalArgumentException`
+  4. 再通过反射直接调用私有方法，进入 catch 分支
+
+## 3. Context 获取方式
+- 本地测试：`ApplicationProvider.getApplicationContext()`
+- 真机测试：`InstrumentationRegistry.getInstrumentation().getTargetContext()`
+
+## 4. 适用结论
+- 本地测试：只验证字段初始化
+- 异常分支：通过 mock 和反射单独触发
+- 真机测试：验证完整连接流程和回调
 
 
 
