@@ -84,8 +84,8 @@ verify(mockObj).方法(captor.capture())
 assertEquals(期望值, captor.firstValue.字段)
 ```
 
-## 9. spy()
-- spy：基于真实对象的代理，未打桩的方法会执行真实逻辑
+## 9. spy() 和 mock()区别
+- spy：基于真实对象的代理，未打桩的方法会执行真实逻辑，（保留真实逻辑，只针对需要控制的点打桩）。
 - mock：完全假的对象，方法默认不执行真实逻辑
 - 当需要保留部分真实逻辑时使用 spy()
 ```kotlin
