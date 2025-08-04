@@ -178,6 +178,88 @@ testLogin_withInvalidPassword_throwException
 - 优先使用 assertThrows 验证异常
 - Robolectric 适合本地 JVM 环境运行 Android 逻辑
 
+## 16.常用 JUnit4 + Mockito + Robolectric 注解简述
+### @RunWith
+- **作用**  
+  指定运行测试类的 Runner。  
+  在 Android 单元测试中常用：
+  - `@RunWith(MockitoJUnitRunner::class)`：使用 Mockito 的 Runner。
+  - `@RunWith(RobolectricTestRunner::class)`：使用 Robolectric 的 Runner。
+- **注意**  
+  Robolectric 测试类必须使用 `RobolectricTestRunner`。
+
+### @Before
+- **作用**  
+  在每个 `@Test` 方法执行前运行，用于公共初始化逻辑。
+
+- **示例**  
+  ```java
+  @Before
+  public void setUp() {
+      MockitoAnnotations.initMocks(this);
+  }
+  ```
+### @After
+- 作用
+在每个 @Test 方法执行后运行，用于释放资源、重置状态。
+
+### @Test
+- 作用
+标识测试方法。
+- 可选参数
+  - `expected = Exception.class`：期望抛出某异常。
+  - `timeout = 1000`：设置超时时间。
+  - 
+### @Mock
+- 作用
+使用 Mockito 创建一个 Mock 对象。
+- 特点
+不需要手动实例化对象，Mockito 会自动生成代理。
+
+### @InjectMocks
+- 作用
+自动将`@Mock` 创建的依赖对象注入到待测试的类中。
+- 原理
+Mockito 会基于构造函数、Setter 或字段注入。
+
+### 其他相关注解（扩展）
+- @Config (Robolectric 提供)
+   - 用于指定 SDK 版本、资源路径等。
+   - 示例：
+     ```java
+     @Config(sdk = 29)
+     ```
+
+### 示例
+```java
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 29)
+public class ExampleTest {
+
+    @Mock
+    MyRepository repository;
+
+    @InjectMocks
+    MyViewModel viewModel;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @After
+    public void tearDown() {
+        // 清理资源
+    }
+
+    @Test
+    public void testSomething() {
+        // 使用 mock 数据进行测试
+    }
+}
+
+```
+
 ---
 # 测试中的关键知识点整理
 
@@ -207,6 +289,7 @@ testLogin_withInvalidPassword_throwException
 - 异常分支：通过 mock 和反射单独触发
 - 真机测试：验证完整连接流程和回调
 
+---
 
 
 
