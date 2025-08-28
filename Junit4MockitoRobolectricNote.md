@@ -280,15 +280,14 @@ public class ExampleTest {
     }
 ```
 ## 18. 强制mockpublic函数，不走内部逻辑，执行返回值时：应将所需参数，也带上。参数不能是any
+```java
+   Result result = obj.judgeGacResultFromEmv( mCardInfo.getEmvTags());
 ```
- Result result = obj.judgeGacResultFromEmv(
-                  mCardInfo.getEmvTags());
-```
-```
-        Map<Integer, String> emvTags = mCardInfo.getEmvTags();
-        doReturn(SUCCESS_IC_TC)
-                .when(obj)
-                .judgeGacResultFromEmv(emvTags); // 注意此处不能为 anyMap
+```java
+   Map<Integer, String> emvTags = mCardInfo.getEmvTags();
+   doReturn(SUCCESS_IC_TC)
+           .when(obj)
+           .judgeGacResultFromEmv(emvTags); // 注意此处不能为 anyMap
 ```
 
 
