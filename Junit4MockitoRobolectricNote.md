@@ -260,6 +260,26 @@ public class ExampleTest {
 
 ```
 
+## 17. private 私有函数直接mock
+```java
+    @SuppressWarnings("unchecked")
+    private boolean invokeXXXX(XXXClass className, XXXParams params) throws Exception {
+        Method method =
+                XXXClass.class.getDeclaredMethod("XXXMethodName", XXXParams.class);
+        method.setAccessible(true);
+        return (返回值类型) method.invoke(className, params);
+    }
+
+    /**
+     * map == null → false
+     */
+    @Test
+    public void test_nullMap_rerurnFalse() throws Exception {
+        boolean result = invokeXXXX(card, null);
+        assertFalse(result);
+    }
+```
+
 ---
 # 测试中的关键知识点整理
 
