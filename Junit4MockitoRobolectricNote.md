@@ -297,7 +297,7 @@ import java.util.Map;
 
 public class ReflectionTestUtil {
 
-    // 基本类型和包装类的映射
+    // 基本类型与包装类型的映射
     private static final Map<Class<?>, Class<?>> PRIMITIVE_MAP = new HashMap<>();
 
     static {
@@ -328,25 +328,16 @@ public class ReflectionTestUtil {
                                             Class<T> returnType,
                                             Object... args) throws Exception {
         if (target == null) {
-            throw new IllegalArgumentException("Target object cannot be null.");
+            throw new IllegalArgumentException("目标对象不能为 null。");
         }
         if (methodName == null || methodName.isEmpty()) {
-            throw new IllegalArgumentException("Method name cannot be null or empty.");
+            throw new IllegalArgumentException("方法名不能为 null 或空字符串。");
         }
 
-        // 参数类型推断（包含装箱/拆箱映射）
-        Class<?>[] paramTypes = new Class[args.length];
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] == null) {
-                paramTypes[i] = Object.class; // null 参数用 Object.class 占位
-            } else {
-                Class<?> argClass = args[i].getClass();
-                paramTypes[i] = PRIMITIVE_MAP.getOrDefault(argClass, argClass);
-            }
+        Method method = findMethod(target.getClass(), methodName, args);
+        if (method == null) {
+            throw new NoSuchMethodException("找不到方法: " + methodName);
         }
-
-        // 获取并调用方法
-        Method method = target.getClass().getDeclaredMethod(methodName, paramTypes);
         method.setAccessible(true);
 
         Object result = method.invoke(target, args);
@@ -354,6 +345,56 @@ public class ReflectionTestUtil {
             return (T) result;
         }
         return null;
+    }
+
+    /** 
+     * 遍历类层次结构，查找匹配的方法
+     */
+    private static Method findMethod(Class<?> clazz, String methodName, Object[] args) {
+        for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
+            for (Method m : c.getDeclaredMethods()) {
+                if (!m.getName().equals(methodName)) continue;
+                Class<?>[] paramTypes = m.getParameterTypes();
+                if (paramTypes.length != args.length) continue;
+
+                boolean match = true;
+                for (int i = 0; i < paramTypes.length; i++) {
+                    Object arg = args[i];
+                    Class<?> paramType = paramTypes[i];
+
+                    if (arg == null) {
+                        // 如果参数为 null → 引用类型可以匹配
+                        if (paramType.isPrimitive()) {
+                            match = false;
+                            break;
+                        }
+                    } else {
+                        Class<?> argClass = arg.getClass();
+                        Class<?> wrapped = PRIMITIVE_MAP.getOrDefault(argClass, argClass);
+                        if (!isAssignable(paramType, wrapped)) {
+                            match = false;
+                            break;
+                        }
+                    }
+                }
+                if (match) return m;
+            }
+        }
+        return null;
+    }
+
+    /** 
+     * 检查 paramType 是否可以赋值给 argType（考虑基本类型和包装类型）
+     */
+    private static boolean isAssignable(Class<?> paramType, Class<?> argType) {
+        if (paramType.isAssignableFrom(argType)) {
+            return true;
+        }
+        // 基本类型与包装类型的对应关系
+        if (paramType.isPrimitive()) {
+            return PRIMITIVE_MAP.get(argType) == paramType;
+        }
+        return false;
     }
 }
 
