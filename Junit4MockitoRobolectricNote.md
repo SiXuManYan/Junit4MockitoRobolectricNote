@@ -289,6 +289,75 @@ public class ExampleTest {
            .when(obj)
            .judgeGacResultFromEmv(emvTags); // 注意此处不能为 anyMap
 ```
+私有方法mock工具类：
+```java
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ReflectionTestUtil {
+
+    // 基本类型和包装类的映射
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_MAP = new HashMap<>();
+
+    static {
+        PRIMITIVE_MAP.put(Boolean.class, boolean.class);
+        PRIMITIVE_MAP.put(Integer.class, int.class);
+        PRIMITIVE_MAP.put(Long.class, long.class);
+        PRIMITIVE_MAP.put(Double.class, double.class);
+        PRIMITIVE_MAP.put(Float.class, float.class);
+        PRIMITIVE_MAP.put(Short.class, short.class);
+        PRIMITIVE_MAP.put(Byte.class, byte.class);
+        PRIMITIVE_MAP.put(Character.class, char.class);
+    }
+
+    /**
+     * 通用的私有方法调用工具
+     *
+     * @param target     被测试的对象实例
+     * @param methodName 私有方法名
+     * @param returnType 返回类型
+     * @param args       方法参数
+     * @param <T>        泛型返回值
+     * @return 方法执行结果
+     * @throws Exception 如果方法不存在或调用失败
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T invokePrivateMethod(Object target,
+                                            String methodName,
+                                            Class<T> returnType,
+                                            Object... args) throws Exception {
+        if (target == null) {
+            throw new IllegalArgumentException("Target object cannot be null.");
+        }
+        if (methodName == null || methodName.isEmpty()) {
+            throw new IllegalArgumentException("Method name cannot be null or empty.");
+        }
+
+        // 参数类型推断（包含装箱/拆箱映射）
+        Class<?>[] paramTypes = new Class[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] == null) {
+                paramTypes[i] = Object.class; // null 参数用 Object.class 占位
+            } else {
+                Class<?> argClass = args[i].getClass();
+                paramTypes[i] = PRIMITIVE_MAP.getOrDefault(argClass, argClass);
+            }
+        }
+
+        // 获取并调用方法
+        Method method = target.getClass().getDeclaredMethod(methodName, paramTypes);
+        method.setAccessible(true);
+
+        Object result = method.invoke(target, args);
+        if (result != null && returnType.isInstance(result)) {
+            return (T) result;
+        }
+        return null;
+    }
+}
+
+```
 
 
 ---
