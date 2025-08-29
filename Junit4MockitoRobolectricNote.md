@@ -432,5 +432,53 @@ public class ReflectionTestUtil {
 
 ---
 
+# Mockito 参数传递与使用要点
+
+## 1. `anyXxx()`（参数匹配器）
+- 用途：**只能**用于 `when(...)` / `verify(...)` 场景。
+- 在 **真实调用 act** 时，`anyXxx()` 会退化为默认值：
+  - `anyObject()` → `null`
+  - `anyBoolean()` → `false`
+  - `anyInt()` → `0`
+- ❌ 不能用作真实调用参数，否则可能导致意料之外的默认值传入。
+
+示例：
+```java
+// ✅ stub
+when(card.judgeTradeResult(any(CenterResult.class), anyBoolean()))
+        .thenReturn(true);
+
+// ✅ verify
+verify(card).judgeTradeResult(any(CenterResult.class), anyBoolean());
+
+// ❌ act
+card.judgeTradeResult(any(CenterResult.class), anyBoolean()); // 实际上传 null 和 false
+```
+
+## 2. mock(SomeClass.class)
+用途：创建一个 mock 对象，可以直接作为真实调用的参数。
+适合在 act 中传入，模拟依赖对象。
+示例
+```java
+CenterResult mockResult = mock(CenterResult.class);
+card.judgeTradeResult(mockResult, true); // ✅ 正确调用
+```
+## 3. 混合使用
+```java
+card.judgeTradeResult(mock(CenterResult.class), anyBoolean());
+```
+第一个参数：mock 出来的对象 ✅
+第二个参数：anyBoolean() 在 act 中退化为 false
+实际等价于：
+```java
+card.judgeTradeResult(mock(CenterResult.class), false);
+```
+## 4. 总结
+真实调用 act：只能传具体对象（含 mock 对象），不要用 anyXxx()。
+stub/verify：适合使用 anyXxx()、eq(xxx) 等参数匹配器。
+记忆口诀：
+“act 用 mock，对外匹配用 any。”
+
+
 
 
