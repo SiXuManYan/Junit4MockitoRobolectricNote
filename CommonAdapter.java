@@ -1,9 +1,13 @@
+package com.panasonic.jp.lumixlab.controller.fragment.gallery.abs;
+
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 
@@ -15,9 +19,13 @@ import java.util.List;
 public abstract class CommonAdapter<T, VB extends ViewBinding>
         extends RecyclerView.Adapter<CommonAdapter<T, VB>.BindingViewHolder> {
 
+    protected Context context;
+
+    /**
+     * adapter data list
+     */
     protected List<T> dataList = new ArrayList<>();
-    private OnItemClickListener<T> onItemClickListener;
-    private OnItemChildClickListener<T> onItemChildClickListener;
+
     protected BindingViewHolder currentHolder;
 
     public CommonAdapter() {
@@ -27,18 +35,11 @@ public abstract class CommonAdapter<T, VB extends ViewBinding>
         this.dataList = dataList;
     }
 
-    public void setOnItemClickListener(OnItemClickListener<T> listener) {
-        this.onItemClickListener = listener;
-    }
-
-    public void setOnItemChildClickListener(OnItemChildClickListener<T> listener) {
-        this.onItemChildClickListener = listener;
-    }
-
     @NonNull
     @Override
     public BindingViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         VB binding = onCreateBinding(LayoutInflater.from(parent.getContext()), parent, viewType);
+        context = parent.getContext();
         return new BindingViewHolder(binding, viewType);
     }
 
@@ -52,9 +53,17 @@ public abstract class CommonAdapter<T, VB extends ViewBinding>
         // item click
         holder.itemView.setOnClickListener(v -> {
             if (onItemClickListener != null) {
-                onItemClickListener.onItemClick(item, position);
+                onItemClickListener.onItemClick(item, position, v);
             }
         });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (onItemLongClickListener != null) {
+                onItemLongClickListener.onItemLongClick(item, position, v);
+            }
+            return true;
+        });
+
 
         // item child click
         for (View childClickView : holder.childClickViews) {
@@ -80,17 +89,10 @@ public abstract class CommonAdapter<T, VB extends ViewBinding>
         return super.getItemViewType(position);
     }
 
-
     @SuppressLint("NotifyDataSetChanged")
     public void setNewDataList(List<T> list) {
         this.dataList.clear();
         this.dataList.addAll(list);
-        notifyDataSetChanged();
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void setDataList(List<T> list) {
-        this.dataList = list;
         notifyDataSetChanged();
     }
 
@@ -102,15 +104,38 @@ public abstract class CommonAdapter<T, VB extends ViewBinding>
         }
     }
 
-    public interface OnItemClickListener<T> {
-        void onItemClick(T item, int position);
+    public void deleteItem(int position) {
+        if (position < 0 || position > this.dataList.size()) {
+            return;
+        }
+        this.dataList.remove(position);
+        notifyItemRemoved(position);
     }
 
-    public interface OnItemChildClickListener<T> {
-        void onItemChildClick(T item, int position, View view, int viewId);
+    public boolean isEmpty() {
+        return this.dataList.isEmpty();
     }
 
-    class BindingViewHolder extends RecyclerView.ViewHolder {
+    public boolean isNotEmpty() {
+        return !this.dataList.isEmpty();
+    }
+
+    public String getString(@StringRes int resId) {
+        return context.getString(resId);
+    }
+
+    public List<T> getAllData() {
+        return dataList;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void clearAllData() {
+        dataList.clear();
+        notifyDataSetChanged();
+    }
+
+
+    public class BindingViewHolder extends RecyclerView.ViewHolder {
         VB binding;
         ArrayList<View> childClickViews = new ArrayList<>();
         int viewType;
@@ -126,9 +151,42 @@ public abstract class CommonAdapter<T, VB extends ViewBinding>
         }
     }
 
+    // region [item click]
+
+    private OnItemClickListener<T> onItemClickListener;
+    private OnItemLongClickListener<T> onItemLongClickListener;
+    private OnItemChildClickListener<T> onItemChildClickListener;
+
+    public interface OnItemClickListener<T> {
+        void onItemClick(T item, int position, View v);
+    }
+
+    public interface OnItemChildClickListener<T> {
+        void onItemChildClick(T item, int position, View view, int viewId);
+    }
+
+    public interface OnItemLongClickListener<T> {
+        void onItemLongClick(T item, int position, View v);
+    }
+
     protected void bindChildClickListener(View... views) {
         if (currentHolder != null) {
             currentHolder.bindChildClickListener(views);
         }
     }
+
+    public void setOnItemClickListener(OnItemClickListener<T> listener) {
+        this.onItemClickListener = listener;
+    }
+
+    public void setOnItemLongListener(OnItemLongClickListener<T> listener) {
+        this.onItemLongClickListener = listener;
+    }
+
+    public void setOnItemChildClickListener(OnItemChildClickListener<T> listener) {
+        this.onItemChildClickListener = listener;
+    }
+    // endregion
+
 }
+
